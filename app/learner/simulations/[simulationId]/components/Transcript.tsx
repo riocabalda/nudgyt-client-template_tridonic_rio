@@ -1,6 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Card } from '@/app/(shared)/components/ui/card'
-import { checkSafariMicrophonePermission, cn, compactName, getFirstName } from '@/app/(shared)/utils'
+import {
+  checkSafariMicrophonePermission,
+  cn,
+  compactName,
+  getFirstName
+} from '@/app/(shared)/utils'
 import 'regenerator-runtime/runtime' // Place before 'react-speech-recognition'
 import SpeechRecognition, {
   useSpeechRecognition
