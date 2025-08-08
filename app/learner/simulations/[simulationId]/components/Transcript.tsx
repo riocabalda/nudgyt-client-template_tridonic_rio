@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { Card } from '@/app/(shared)/components/ui/card'
-import { cn, compactName, getFirstName } from '@/app/(shared)/utils'
+import { checkSafariMicrophonePermission, cn, compactName, getFirstName } from '@/app/(shared)/utils'
 import 'regenerator-runtime/runtime' // Place before 'react-speech-recognition'
 import SpeechRecognition, {
   useSpeechRecognition
@@ -84,24 +84,29 @@ function Transcript() {
   }, [transcriptsData])
 
   const permissionPrompt = async () => {
-    const permissionStatus = await navigator.permissions.query({
-      name: 'microphone' as PermissionName
-    })
-    if (permissionStatus) setMicPermission(permissionStatus.state)
-  }
+    try {
+      const isSafari = /^((?!chrome|android).)*safari/i.test(
+        navigator.userAgent
+      )
+      if (isSafari) {
+        const checkedMicPermission = await checkSafariMicrophonePermission()
+        setMicPermission(checkedMicPermission)
+        return
+      }
 
-  const openBrowserSettings = () => {
-    const ua = navigator.userAgent.toLowerCase()
-    if (ua.indexOf('chrome') > -1) {
-      return 'Please go to Chrome settings > Privacy and security > Site settings > Microphone and allow access for this site.'
-    } else if (ua.indexOf('firefox') > -1) {
-      return 'Please go to Firefox settings > Privacy & Security > Permissions > Microphone and allow access for this site.'
-    } else if (ua.indexOf('safari') > -1) {
-      return 'Please go to Safari > Preferences > Websites > Microphone and allow access for this site.'
-    } else if (ua.indexOf('edg') > -1) {
-      return 'Please go to Edge settings > Cookies and site permissions > Microphone and allow access for this site.'
-    } else {
-      return 'Please enable microphone permissions in your browser settings.'
+      const permissionStatus = await navigator.permissions.query({
+        name: 'microphone' as PermissionName
+      })
+      setMicPermission(permissionStatus.state)
+
+      // Listen for changes in permission state
+      permissionStatus.onchange = () => {
+        setMicPermission(permissionStatus.state)
+        handleStopListening()
+      }
+    } catch (error) {
+      console.error('Error querying microphone permissions:', error)
+      setMicPermission(null)
     }
   }
 
@@ -117,10 +122,7 @@ function Transcript() {
       return toast(
         <div>
           <p>Microphone access denied.</p> <br />
-          <p>{openBrowserSettings()}</p>
-          <p>
-            <a href='http://' target='_blank' rel='noopener noreferrer'></a>
-          </p>
+          <p>Please enable microphone permissions in your browser settings.</p>
         </div>
       )
     if (!listening)

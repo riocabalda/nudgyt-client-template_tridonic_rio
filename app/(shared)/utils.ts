@@ -503,3 +503,15 @@ export function separateScenarioTypes(allScenarios: ScenarioType[]) {
 
   return { regularScenarios, standaloneScenarios }
 }
+
+export async function checkSafariMicrophonePermission() {
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+    stream.getTracks().forEach((track) => track.stop())
+    return 'granted'
+  } catch (err: any) {
+    if (err.name === 'NotAllowedError') return 'denied'
+    if (err.name === 'NotFoundError') return 'not-found'
+    return 'error'
+  }
+}
